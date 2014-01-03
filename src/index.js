@@ -83,8 +83,13 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
 };
 
 MDVars.prototype._flush = function(done) {
-
+  // Reemit unterminated flags
   this._unFlag();
+
+  // Emit an error if metadatas are not closed
+  if(this._parsingVars) {
+    this.emit('error', new Error('Unclosed meta data section.'));
+  }
 
   done();
 };
