@@ -1,0 +1,40 @@
+{
+  "name": "mdvars",
+  "version": "0.0.1",
+  "description": "Extract vars from markdown files and output the markdown.",
+  "homepage": "https://github.com/nfroidure/mdvars",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "mocha tests/*.mocha.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nfroidure/mdvars"
+  },
+  "keywords": [
+    "markdown",
+    "var",
+    "stream",
+    "varstream",
+    "metadata"
+  ],
+	"dependencies": {
+		"varstream": "0.2.x"
+	},
+	"devDependencies": {
+		"mocha": "1.x.x"
+	},
+  "author": {
+    "name": "Nicolas Froidure",
+    "url": "http://www.insertafter.com/blog.html"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/nfroidure/mdvars/blob/master/LICENSE"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/nfroidure/mldvars/issues"
+  }
+}
