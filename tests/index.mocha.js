@@ -32,8 +32,12 @@ function readMetadatas(file, done) {
 
 describe('Reading metadata', function() {
 
-  it("should work for markdown file", function(done) {
+  it("should work for a simple markdown file", function(done) {
     readMetadatas('simple', done);
+  });
+
+  it("should work for markdown file with unterminated flags", function(done) {
+    readMetadatas('unflag', done);
   });
 
 });

@@ -13,13 +13,15 @@ var PassThrough = require('stream').PassThrough
   , VarStream = require('varstream')
 ;
 
-// Inherit of PassThrough stream
-util.inherits(MDVars, PassThrough);
-
 // Consts
 var VAR_START_FLAG = '<!--VarStream'
   , VAR_END_FLAG = '-->'
+;
 
+// Inherit of PassThrough stream
+util.inherits(MDVars, PassThrough);
+
+// Constructor
 function MDVars(root, prop) {
 
   // Ensure new were used
@@ -54,9 +56,7 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
         continue;
       // Write partial end flag to the var stream
       } else if(this._parsingRank) {
-        for(var j = 0, jj = this._parsingRank; j < jj; j++) {
-          this._varstream.write(VAR_END_FLAG[j]);
-        }
+        this._unFlag();
       }
       // Write char to the varstream
       this._varstream.write(string[i]);
@@ -72,9 +72,7 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
         continue;
       // Pass partial end flag through
       } else if(this._parsingRank) {
-        for(var j = 0, jj = this._parsingRank; j < jj; j++) {
-          this.push(VAR_START_FLAG[j]);
-        }
+        this._unFlag();
       }
       // Let is pass through
       this.push(string[i]);
@@ -85,9 +83,23 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
 };
 
 MDVars.prototype._flush = function(done) {
-  
+
+  this._unFlag();
 
   done();
+};
+
+MDVars.prototype._unFlag = function() {
+  var string = '';
+  for(var i = 0, ii = this._parsingRank; i < ii; i++) {
+    string += this._parsingVars ? VAR_END_FLAG[i] : VAR_START_FLAG[i];
+  }
+  if(this._parsingVars) {
+    this._varstream.write(string);
+  } else {
+    this.push(string);
+  }
+  this._parsingRank = 0;
 };
 
 
