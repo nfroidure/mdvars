@@ -52,9 +52,10 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
         if(this._parsingRank === VAR_END_FLAG.length) {
           this._parsingVars = false;
           this._parsingRank = 0;
+          this.emit('varsend');
         }
         continue;
-      // Write partial end flag to the var stream
+      // Write partial end flag to the varstream
       } else if(this._parsingRank) {
         this._unFlag();
       }
@@ -64,13 +65,14 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
       // Looking for the start flag
       if(string[i] === VAR_START_FLAG[this._parsingRank]) {
         this._parsingRank++;
-        // Got complete end flag
+        // Got complete start flag
         if(this._parsingRank === VAR_START_FLAG.length) {
           this._parsingVars = true;
           this._parsingRank = 0;
+          this.emit('varsstart');
         }
         continue;
-      // Pass partial end flag through
+      // Pass partial start flag through
       } else if(this._parsingRank) {
         this._unFlag();
       }
