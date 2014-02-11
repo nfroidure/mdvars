@@ -26,7 +26,7 @@ function MDVars(root, prop) {
 
   // Ensure new were used
   if (!(this instanceof MDVars)) {
-    throw Error('Please use the "new" operator to instanciate a MDVars object.');
+    return new MDVars(root, prop);
   }
 
   // Parent constructor

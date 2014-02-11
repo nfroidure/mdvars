@@ -5,12 +5,12 @@ var assert = require('assert')
   , VarStream = require('varstream');
 
 // Helpers
-function readMetadatas(file, done) {
+function readMetadatas(file, done, noNew, novarsend) {
   var decoder = new StringDecoder('utf8')
     , resObject =  {}
     , resOutput = ''
     , stream = Fs.createReadStream(__dirname+'/fixtures/'+file+'.meta.md')
-      .pipe(new MDVars(resObject, 'prop'))
+      .pipe(noNew ? MDVars(resObject, 'prop') : new MDVars(resObject, 'prop'))
     , expOutput = Fs.readFileSync(__dirname+'/fixtures/'+file+'.md', 'utf8')
     , expObject = {}
     , varsstart = false
@@ -31,8 +31,11 @@ function readMetadatas(file, done) {
     varsend = true;
   });
 
-  stream.on('data', function(chunk) {
-    resOutput += decoder.write(chunk);
+  stream.on('readable', function() {
+    var chunk;
+    while(chunk = stream.read()) {
+      resOutput += decoder.write(chunk);
+    }
   });
 
   stream.on('finish', function() {
@@ -42,10 +45,12 @@ function readMetadatas(file, done) {
       .on('finish', function() {
         assert.deepEqual(resObject, expObject);
         assert(varsstart);
-        assert(varsend);
+        assert(novarsend ? !varsend : varsend);
         done();
       });
   });
+
+  return stream;
 }
 
 describe('Reading metadata', function() {
@@ -56,6 +61,16 @@ describe('Reading metadata', function() {
 
   it("should work for markdown file with unterminated flags", function(done) {
     readMetadatas('unflag', done);
+  });
+
+  it("should work when new is not used", function(done) {
+    readMetadatas('simple', done, true);
+  });
+
+  it("should fail when unclosed variable chunk", function(done) {
+    readMetadatas('unclosed', function() {}, true, true).on('error', function() {
+      done();
+    });
   });
 
 });
