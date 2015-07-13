@@ -1,6 +1,6 @@
 {
   "name": "mdvars",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extract vars from markdown files and output the markdown.",
   "homepage": "https://github.com/nfroidure/mdvars",
   "main": "src/index.js",
