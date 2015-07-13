@@ -8,15 +8,13 @@
 "use strict";
 
 // Required modules
-var PassThrough = require('stream').PassThrough
-  , util = require('util')
-  , VarStream = require('varstream')
-;
+var PassThrough = require('stream').PassThrough;
+var util = require('util');
+var VarStream = require('varstream');
 
 // Consts
-var VAR_START_FLAG = '<!--VarStream'
-  , VAR_END_FLAG = '-->'
-;
+var VAR_START_FLAG = '<!--VarStream';
+var VAR_END_FLAG = '-->';
 
 // Inherit of PassThrough stream
 util.inherits(MDVars, PassThrough);
@@ -25,7 +23,7 @@ util.inherits(MDVars, PassThrough);
 function MDVars(root, prop) {
 
   // Ensure new were used
-  if (!(this instanceof MDVars)) {
+  if(!(this instanceof MDVars)) {
     return new MDVars(root, prop);
   }
 
@@ -44,8 +42,8 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
   var string = chunk.toString('utf-8');
 
   for(var i = 0, ii = string.length; i < ii; i++) {
+    // Looking for the end flag
     if(this._parsingVars) {
-      // Looking for the end flag
       if(string[i] === VAR_END_FLAG[this._parsingRank]) {
         this._parsingRank++;
         // Got complete end flag
@@ -61,8 +59,8 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
       }
       // Write char to the varstream
       this._varstream.write(string[i]);
+    // Looking for the start flag
     } else {
-      // Looking for the start flag
       if(string[i] === VAR_START_FLAG[this._parsingRank]) {
         this._parsingRank++;
         // Got complete start flag
@@ -76,7 +74,7 @@ MDVars.prototype._transform = function(chunk, encoding, done) {
       } else if(this._parsingRank) {
         this._unFlag();
       }
-      // Let is pass through
+      // Let it pass through
       this.push(string[i]);
     }
   }
@@ -111,4 +109,3 @@ MDVars.prototype._unFlag = function() {
 
 
 module.exports = MDVars;
-
