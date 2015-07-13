@@ -1,75 +1,119 @@
 var assert = require('assert');
 var MDVars = require(__dirname + '/../src/index.js');
-var Fs = require('fs');
-var StringDecoder = require('string_decoder').StringDecoder;
+var fs = require('fs');
 var VarStream = require('varstream');
+var streamtest = require('streamtest');
 
-// Helpers
-function readMetadatas(file, done, noNew, novarsend) {
-  var decoder = new StringDecoder('utf8');
-  var resObject =  {};
-  var resOutput = '';
-  var stream = Fs.createReadStream(__dirname + '/fixtures/' + file + '.meta.md')
-     .pipe(noNew ? MDVars(resObject, 'prop') : new MDVars(resObject, 'prop'));
-  var expOutput = Fs.readFileSync(__dirname + '/fixtures/' + file + '.md', 'utf8');
-  var expObject = {};
+describe('Reading metadata', function() {
+
+  // Iterating through versions
+  streamtest.versions.forEach(function(version) {
+
+    describe('for ' + version + ' streams', function() {
+
+      it("should work for a simple markdown file", function(done) {
+        var destObject =  {};
+        decorate(fs.createReadStream(__dirname + '/fixtures/simple.meta.md'))
+          .pipe(new MDVars(destObject, 'metadata'))
+          .pipe(streamtest[version].toText(function(err, text) {
+            var expObject = {};
+            if(err) {
+              return done(err);
+            }
+            assert.equal(
+              text,
+              fs.readFileSync(__dirname + '/fixtures/simple.md', 'utf8')
+            );
+            fs.createReadStream(__dirname + '/fixtures/simple.dat')
+              .pipe(new VarStream(expObject, 'metadata'))
+              .on('finish', function() {
+                assert.deepEqual(destObject, expObject);
+                done();
+              });
+          }));
+      });
+
+      it("should work for markdown file with unterminated flags", function(done) {
+        var destObject =  {};
+        decorate(fs.createReadStream(__dirname + '/fixtures/unflag.meta.md'))
+          .pipe(new MDVars(destObject, 'metadata'))
+          .pipe(streamtest[version].toText(function(err, text) {
+            var expObject = {};
+            if(err) {
+              return done(err);
+            }
+            assert.equal(
+              text,
+              fs.readFileSync(__dirname + '/fixtures/unflag.md', 'utf8')
+            );
+            fs.createReadStream(__dirname + '/fixtures/unflag.dat')
+              .pipe(new VarStream(expObject, 'metadata'))
+              .on('finish', function() {
+                assert.deepEqual(destObject, expObject);
+                done();
+              });
+          }));
+      });
+
+      it("should work when new is not used", function(done) {
+        var destObject =  {};
+        decorate(fs.createReadStream(__dirname + '/fixtures/simple.meta.md'))
+          .pipe(MDVars(destObject, 'metadata'))
+          .pipe(streamtest[version].toText(function(err, text) {
+            var expObject = {};
+            if(err) {
+              return done(err);
+            }
+            assert.equal(
+              text,
+              fs.readFileSync(__dirname + '/fixtures/simple.md', 'utf8')
+            );
+            fs.createReadStream(__dirname + '/fixtures/simple.dat')
+              .pipe(new VarStream(expObject, 'metadata'))
+              .on('finish', function() {
+                assert.deepEqual(destObject, expObject);
+                done();
+              });
+          }));
+      });
+
+      it("should fail when unclosed variable chunk", function(done) {
+        var destObject =  {};
+        decorate(fs.createReadStream(__dirname + '/fixtures/unclosed.meta.md'))
+          .pipe(new MDVars(destObject, 'metadata'))
+          .on('error', function(err) {
+            assert.equal(err.message, 'Unclosed meta data section.');
+            done();
+          })
+          .pipe(streamtest[version].toText(function(err, text) {
+            assert(text, fs.readFileSync(__dirname + '/fixtures/unclosed.md', 'utf8') )
+          }));
+      });
+
+    });
+
+  });
+
+});
+
+// Add some more checks for testing
+function decorate(stream, done) {
   var varsstart = false;
   var varsend = false;
 
   stream.on('varsstart', function() {
     if(varsend) {
-      throw new Error('varsend emitted before varsstart');
+      done(new Error('varsend emitted before varsstart'));
     }
     varsstart = true;
   });
 
   stream.on('varsend', function(chunk) {
     if(!varsstart) {
-      throw new Error('varsend emitted when varsstart hasn\'t been emitted yet');
+      done(new Error('varsend emitted when varsstart hasn\'t been emitted yet'));
     }
     varsend = true;
   });
 
-  stream.on('readable', function() {
-    var chunk;
-    while(chunk = stream.read()) {
-      resOutput += decoder.write(chunk);
-    }
-  });
-
-  stream.on('finish', function() {
-    assert.equal(resOutput, expOutput);
-    Fs.createReadStream(__dirname + '/fixtures/' + file + '.dat')
-      .pipe(new VarStream(expObject, 'prop'))
-      .on('finish', function() {
-        assert.deepEqual(resObject, expObject);
-        assert(varsstart);
-        assert(novarsend ? !varsend : varsend);
-        done();
-      });
-  });
-
   return stream;
 }
-
-describe('Reading metadata', function() {
-
-  it("should work for a simple markdown file", function(done) {
-    readMetadatas('simple', done);
-  });
-
-  it("should work for markdown file with unterminated flags", function(done) {
-    readMetadatas('unflag', done);
-  });
-
-  it("should work when new is not used", function(done) {
-    readMetadatas('simple', done, true);
-  });
-
-  it("should fail when unclosed variable chunk", function(done) {
-    readMetadatas('unclosed', function() {}, true, true).on('error', function() {
-      done();
-    });
-  });
-
-});
